@@ -601,4 +601,9 @@ class TabManagerNavDelegate : NSObject, WKNavigationDelegate {
 
             decisionHandler(res)
     }
+
+    func webViewWebContentProcessDidTerminate(webView: WKWebView) {
+        NSLog("WOOP WOOP webView \(webView) received webViewWebContentProcessDidTerminate")
+        webView.reload()
+    }
 }
