@@ -282,6 +282,11 @@ public class BrowserProfile: Profile {
         }
     }()
 
+    lazy var mirrorBookmarks: BookmarkMirrorStorage = {
+        // Yeah, this is lazy. Sorry.
+        return self.bookmarks as! MergedSQLiteBookmarks
+    }()
+
     lazy var searchEngines: SearchEngines = {
         return SearchEngines(prefs: self.prefs)
     }()
@@ -611,6 +616,12 @@ public class BrowserProfile: Profile {
             return loginsSynchronizer.synchronizeLocalLogins(self.profile.logins, withServer: ready.client, info: ready.info)
         }
 
+        private func mirrorBookmarksWithDelegate(delegate: SyncDelegate, prefs: Prefs, ready: Ready) -> SyncResult {
+            log.debug("Mirroring server bookmarks to storage.")
+            let bookmarksMirrorer = ready.synchronizer(MirroringBookmarksSynchronizer.self, delegate: delegate, prefs: prefs)
+            return bookmarksMirrorer.mirrorBookmarksToStorage(self.profile.mirrorBookmarks, withServer: ready.client, info: ready.info, greenLight: self.greenLight())
+        }
+
         /**
          * Returns nil if there's no account.
          */
@@ -732,6 +743,10 @@ public class BrowserProfile: Profile {
         func syncHistory() -> SyncResult {
             // TODO: recognize .NotStarted.
             return self.sync("history", function: syncHistoryWithDelegate)
+        }
+
+        func mirrorBookmarks() -> SyncResult {
+            return self.sync("bookmarks", function: mirrorBookmarksWithDelegate)
         }
 
         /**
