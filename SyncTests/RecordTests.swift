@@ -238,7 +238,7 @@ class RecordTests: XCTestCase {
             "title": "Anøther",
             "bmkUri": "http://terrible.sync/naming",
             "description": "",
-            "tags": "",
+            "tags": [],
             "keyword": "",
             ])
         let bookmark = BookmarkType.payloadFromJSON(validBookmark)
