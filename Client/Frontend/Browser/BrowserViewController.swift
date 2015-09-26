@@ -783,11 +783,12 @@ class BrowserViewController: UIViewController {
         }
 
         profile.bookmarks.isBookmarked(url).uponQueue(dispatch_get_main_queue()) { result in
-            if let bookmarked = result.successValue {
-                self.navigationToolbar.updateBookmarkStatus(bookmarked)
-            } else {
+            guard let bookmarked = result.successValue else {
                 log.error("Error getting bookmark status: \(result.failureValue).")
+                return
             }
+
+            self.navigationToolbar.updateBookmarkStatus(bookmarked)
         }
     }
 
