@@ -255,5 +255,11 @@ class RecordTests: XCTestCase {
 
         XCTAssertEqual(6, item.type.rawValue)
         XCTAssertEqual("ShCZLGEFQMam", item.guid)
+
+        let places = JSON.parse("{\"id\":\"places\",\"type\":\"folder\",\"title\":\"\",\"description\":null,\"children\":[\"menu________\",\"toolbar_____\",\"tags________\",\"unfiled_____\",\"jKnyPDrBQSDg\",\"T6XK5oJMU8ih\"],\"parentid\":\"2hYxKgBwvkEH\"}")
+        let p = BookmarkType.payloadFromJSON(places)
+        XCTAssertTrue(p is FolderPayload)
+        XCTAssertTrue(p is MirrorItemable)
+        XCTAssertEqual(BookmarkRoots.RootGUID, p!.id)
     }
 }
