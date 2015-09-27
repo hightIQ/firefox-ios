@@ -10,6 +10,7 @@ import XCGLogger
 
 let TableBookmarks = "bookmarks"
 let TableBookmarksMirror = "bookmarksMirror"                           // Added in v9.
+let TableBookmarksMirrorStructure = "bookmarksMirrorStructure"         // Added in v10.
 
 let TableFavicons = "favicons"
 let TableHistory = "history"
@@ -36,6 +37,7 @@ private let AllTables: Args = [
 
     TableBookmarks,
     TableBookmarksMirror,
+    TableBookmarksMirrorStructure,
 
     TableQueuedTabs,
 ]
@@ -60,7 +62,7 @@ private let log = Logger.syncLogger
  * We rely on SQLiteHistory having initialized the favicon table first.
  */
 public class BrowserTable: Table {
-    static let DefaultVersion = 9
+    static let DefaultVersion = 10
     let version: Int
     var name: String { return "BROWSER" }
     let sqliteVersion: Int32
@@ -208,6 +210,25 @@ public class BrowserTable: Table {
         return sql
     }
 
+    /**
+     * We need to explicitly store what's provided by the server, because we can't rely on
+     * referenced child nodes to exist yet!
+     */
+    func getBookmarksMirrorStructureTableCreationString(forVersion version: Int = BrowserTable.DefaultVersion) -> String? {
+        if version < 10 {
+            return nil
+        }
+
+        let sql =
+        "CREATE TABLE IF NOT EXISTS \(TableBookmarksMirrorStructure) " +
+        "( parent TEXT NOT NULL REFERENCES \(TableBookmarksMirror)(guid) ON DELETE CASCADE" +
+        ", child TEXT NOT NULL" +      // Should be the GUID of a child.
+        ", idx INTEGER NOT NULL" +     // Should advance from 0.
+        ")"
+
+        return sql
+    }
+
     func create(db: SQLiteDBConnection, version: Int) -> Bool {
         let favicons =
         "CREATE TABLE IF NOT EXISTS \(TableFavicons) (" +
@@ -297,6 +318,7 @@ public class BrowserTable: Table {
         ") "
 
         let bookmarksMirror = getBookmarksMirrorTableCreationString()
+        let bookmarksMirrorStructure = getBookmarksMirrorStructureTableCreationString()
 
         let queries: [(String?, Args?)] = [
             (getDomainsTableCreationString(forVersion: version), nil),
@@ -305,6 +327,7 @@ public class BrowserTable: Table {
             (visits, nil),
             (bookmarks, nil),
             (bookmarksMirror, nil),
+            (bookmarksMirrorStructure, nil),
             (faviconSites, nil),
             (indexShouldUpload, nil),
             (indexSiteIDDate, nil),
@@ -384,6 +407,12 @@ public class BrowserTable: Table {
 
         if from < 9 && to >= 9 {
             if !self.run(db, sql: getBookmarksMirrorTableCreationString(forVersion: to)!) {
+                return false
+            }
+        }
+
+        if from < 10 && to >= 10 {
+            if !self.run(db, sql: getBookmarksMirrorStructureTableCreationString(forVersion: to)!) {
                 return false
             }
         }
