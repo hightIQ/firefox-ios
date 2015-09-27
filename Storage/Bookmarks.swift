@@ -29,8 +29,8 @@ public protocol SearchableBookmarks {
 }
 
 public struct BookmarkMirrorItem {
-    let guid: GUID
-    let type: BookmarkNodeType
+    public let guid: GUID
+    public let type: BookmarkNodeType
     let serverModified: Timestamp
     let isDeleted: Bool
     let hasDupe: Bool
