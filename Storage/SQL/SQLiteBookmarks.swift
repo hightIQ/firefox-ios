@@ -510,9 +510,11 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
     private func cursorForGUID(guid: GUID) -> Deferred<Maybe<Cursor<BookmarkNode>>> {
         let args: Args = [guid]
         let sql =
-        "SELECT id, guid, type, bmkUri, title, pos FROM \(TableBookmarksMirror) WHERE " +
-            "parentid = ? AND is_deleted = 0 " +
-        "ORDER BY pos ASC"
+        "SELECT m.id AS id, m.guid AS guid, m.type AS type, m.bmkUri AS bmkUri, m.title AS title, " +
+        "s.idx AS idx FROM " +
+        "\(TableBookmarksMirror) AS m JOIN \(TableBookmarksMirrorStructure) AS s " +
+        "ON s.child = m.guid WHERE s.parent = ? AND m.is_deleted = 0" +
+        "ORDER BY idx ASC"
         return self.db.runQuery(sql, args: args, factory: MirrorBookmarkNodeFactory.factory)
     }
 
