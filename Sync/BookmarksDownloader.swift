@@ -71,10 +71,11 @@ public class MirroringBookmarksSynchronizer: TimestampedSingleCollectionSynchron
     }
 
     public func mirrorBookmarksToStorage(storage: BookmarkMirrorStorage, withServer storageClient: Sync15StorageClient, info: InfoCollections, greenLight: () -> Bool) -> SyncResult {
+        /*
         if let reason = self.reasonToNotSync(storageClient) {
             return deferMaybe(.NotStarted(reason))
         }
-
+*/
         let encoder = RecordEncoder<BookmarkBasePayload>(decode: BookmarkType.somePayloadFromJSON, encode: { $0 })
 
         guard let bookmarksClient = self.collectionClient(encoder, storageClient: storageClient) else {
@@ -224,10 +225,12 @@ class BatchingDownloader<T: CleartextPayloadJSON> {
             return deferMaybe(.NoNewData)
         }
 
+        /*
         if modified == self.lastModified {
             log.debug("No more data to batch-download.")
             return deferMaybe(.NoNewData)
         }
+*/
 
         return self.downloadNextBatchWithLimit(limit, advancingOnCompletionTo: modified)
     }
@@ -270,7 +273,8 @@ class BatchingDownloader<T: CleartextPayloadJSON> {
             return deferMaybe(.Incomplete)
         }
 
-        let fetch = self.client.getSince(self.baseTimestamp, sort: SortOption.Newest, limit: limit, offset: self.nextOffset)
+        let since = Timestamp(0)    // self.baseTimestamp
+        let fetch = self.client.getSince(since, sort: SortOption.Newest, limit: limit, offset: self.nextOffset)
         return fetch.bind { result in
             guard let response = result.successValue else {
                 return handleFailure(result.failureValue!)
