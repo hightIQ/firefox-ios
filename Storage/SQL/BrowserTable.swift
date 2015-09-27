@@ -219,6 +219,7 @@ public class BrowserTable: Table {
             return nil
         }
 
+        // TODO: index me.
         let sql =
         "CREATE TABLE IF NOT EXISTS \(TableBookmarksMirrorStructure) " +
         "( parent TEXT NOT NULL REFERENCES \(TableBookmarksMirror)(guid) ON DELETE CASCADE" +
