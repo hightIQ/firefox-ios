@@ -318,12 +318,23 @@ public class BookmarkQueryPayload: BookmarkPayload {
 
     override public func toMirrorItem(modified: Timestamp) -> BookmarkMirrorItem {
         if self.deleted {
-            // TODO: .Query
-            return BookmarkMirrorItem.deleted(.Bookmark, guid: self.id, modified: modified)
+            return BookmarkMirrorItem.deleted(.Query, guid: self.id, modified: modified)
         }
 
-        // TODO
-        return super.toMirrorItem(modified)
+        return BookmarkMirrorItem.query(
+            self.id,
+            modified: modified,
+            hasDupe: self.hasDupe,
+            parentID: self["parentid"].asString!,
+            parentName: self["parentName"].asString!,
+            title: self["title"].asString ?? "",
+            description: self["description"].asString,
+            URI: self["bmkUri"].asString!,
+            tags: self["tags"].toString(),           // Stringify it so we can put the array in the DB.
+            keyword: self["keyword"].asString,
+            folderName: self["folderName"].asString,
+            queryID: self["queryID"].asString
+        )
     }
 }
 
