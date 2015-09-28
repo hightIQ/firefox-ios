@@ -513,7 +513,10 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
         "SELECT m.id AS id, m.guid AS guid, m.type AS type, m.bmkUri AS bmkUri, m.title AS title, " +
         "s.idx AS idx FROM " +
         "\(TableBookmarksMirror) AS m JOIN \(TableBookmarksMirrorStructure) AS s " +
-        "ON s.child = m.guid WHERE s.parent = ? AND m.is_deleted = 0" +
+        "ON s.child = m.guid " +
+        "WHERE s.parent = ? AND " +
+        "m.is_deleted = 0 AND " +
+        "m.type <= 2 " +                // Bookmark or folder.
         "ORDER BY idx ASC"
         return self.db.runQuery(sql, args: args, factory: MirrorBookmarkNodeFactory.factory)
     }
