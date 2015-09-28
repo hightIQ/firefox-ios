@@ -553,6 +553,13 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
         }
     }
 
+    private func modelForDesktopBookmarks() -> Deferred<Maybe<BookmarksModel>> {
+        return self.getDesktopRoots() >>== { cursor in
+            let desktop = SQLiteBookmarkFolder(guid: "desktop_____", title: "Desktop Bookmarks", children: cursor)
+            return deferMaybe(BookmarksModel(modelFactory: self, root: desktop))
+        }
+    }
+
     private func modelForCursor(guid: GUID, title: String)(cursor: Cursor<BookmarkNode>) -> Deferred<Maybe<BookmarksModel>> {
         let folder = SQLiteBookmarkFolder(guid: guid, title: title, children: cursor)
         return deferMaybe(BookmarksModel(modelFactory: self, root: folder))
@@ -569,6 +576,10 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
     public func modelForFolder(guid: GUID, title: String) -> Deferred<Maybe<BookmarksModel>> {
         if guid == BookmarkRoots.MobileFolderGUID {
             return self.modelForRoot()
+        }
+
+        if guid == "desktop_____" {
+            return self.modelForDesktopBookmarks()
         }
 
         return self.cursorForGUID(guid) >>== self.modelForCursor(guid, title: "")
