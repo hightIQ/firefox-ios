@@ -507,6 +507,19 @@ public class SQLiteBookmarkMirrorStorage: BookmarkMirrorStorage {
 }
 
 extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
+    private func getDesktopRoots() -> Deferred<Maybe<Cursor<BookmarkNode>>> {
+        let args: Args = [BookmarkRoots.RootGUID]
+        let folderType = BookmarkNodeType.Folder.rawValue
+        let sql =
+        "SELECT id, guid, type, title FROM \(TableBookmarksMirror) WHERE " +
+        "parentid = ? AND " +
+        "is_deleted = 0 AND " +
+        "type = \(folderType) AND " +
+        "title IS NOT '' " +
+        "ORDER BY guid ASC"
+        return self.db.runQuery(sql, args: args, factory: MirrorBookmarkNodeFactory.factory)
+    }
+
     private func cursorForGUID(guid: GUID) -> Deferred<Maybe<Cursor<BookmarkNode>>> {
         let args: Args = [guid]
         let sql =
@@ -525,8 +538,19 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
      * Returns a single folder that contains a folder called "Desktop Bookmarks". That contains
      * mirrored folders.
      */
-    public func desktopBookmarksFolder() -> BookmarkFolder? {
-        return nil
+    public func extendWithDesktopBookmarksFolder(mobile: BookmarkFolder, factory: BookmarksModelFactory) -> Deferred<Maybe<BookmarksModel>> {
+
+        return self.getDesktopRoots() >>== { cursor in
+            if cursor.count == 0 {
+                // No desktop bookmarks.
+                log.debug("No desktop bookmarks. Only showing mobile.")
+                return deferMaybe(BookmarksModel(modelFactory: factory, root: mobile))
+            }
+
+            let desktop = SQLiteBookmarkFolder(guid: "desktop_____", title: "Desktop Bookmarks", children: cursor)
+            let prepended = PrependedBookmarkFolder(main: mobile, prepend: desktop)
+            return deferMaybe(BookmarksModel(modelFactory: self, root: prepended))
+        }
     }
 
     private func modelForCursor(guid: GUID, title: String)(cursor: Cursor<BookmarkNode>) -> Deferred<Maybe<BookmarksModel>> {
@@ -629,12 +653,7 @@ extension MergedSQLiteBookmarks: BookmarksModelFactory {
             return deferMaybe(DatabaseError(description: "Unable to fetch mobile bookmarks."))
         }
 
-        guard let desktop = self.mirror.desktopBookmarksFolder() else {
-            // No desktop bookmarks.
-            return deferMaybe(BookmarksModel(modelFactory: self, root: mobile))
-        }
-        let prepended = PrependedBookmarkFolder(main: mobile, prepend: desktop)
-        return deferMaybe(BookmarksModel(modelFactory: self, root: prepended))
+        return self.mirror.extendWithDesktopBookmarksFolder(mobile, factory: self)
     }
 
     // Whenever async construction is necessary, we fall into a pattern of needing
