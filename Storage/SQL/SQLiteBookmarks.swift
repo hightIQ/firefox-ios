@@ -8,6 +8,8 @@ import XCGLogger
 
 private let log = Logger.syncLogger
 
+private let desktopBookmarksLabel = NSLocalizedString("Desktop Bookmarks", tableName: "BookmarkPanel", comment: "The folder name for the virtual folder that contains all desktop bookmarks.")
+
 class SQLiteBookmarkFolder: BookmarkFolder {
     private let cursor: Cursor<BookmarkNode>
     override var count: Int {
@@ -547,7 +549,7 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
                 return deferMaybe(BookmarksModel(modelFactory: factory, root: mobile))
             }
 
-            let desktop = SQLiteBookmarkFolder(guid: "desktop_____", title: "Desktop Bookmarks", children: cursor)
+            let desktop = self.folderForDesktopBookmarksCursor(cursor)
             let prepended = PrependedBookmarkFolder(main: mobile, prepend: desktop)
             return deferMaybe(BookmarksModel(modelFactory: self, root: prepended))
         }
@@ -555,9 +557,13 @@ extension SQLiteBookmarkMirrorStorage: BookmarksModelFactory {
 
     private func modelForDesktopBookmarks() -> Deferred<Maybe<BookmarksModel>> {
         return self.getDesktopRoots() >>== { cursor in
-            let desktop = SQLiteBookmarkFolder(guid: "desktop_____", title: "Desktop Bookmarks", children: cursor)
+            let desktop = self.folderForDesktopBookmarksCursor(cursor)
             return deferMaybe(BookmarksModel(modelFactory: self, root: desktop))
         }
+    }
+
+    private func folderForDesktopBookmarksCursor(cursor: Cursor<BookmarkNode>) -> SQLiteBookmarkFolder {
+        return SQLiteBookmarkFolder(guid: "desktop_____", title: "Desktop Bookmarks", children: cursor)
     }
 
     private func modelForCursor(guid: GUID, title: String)(cursor: Cursor<BookmarkNode>) -> Deferred<Maybe<BookmarksModel>> {
